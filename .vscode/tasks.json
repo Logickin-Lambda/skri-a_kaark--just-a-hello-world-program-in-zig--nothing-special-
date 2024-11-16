@@ -1,0 +1,8 @@
+{
+    "version": "2.0.0",
+    "tasks": [{
+        "label": "skri-a kaark",
+        "type": "shell",
+        "command": "zig build" 
+    }]
+}
