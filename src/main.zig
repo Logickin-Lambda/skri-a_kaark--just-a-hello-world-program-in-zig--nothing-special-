@@ -22,6 +22,7 @@ pub fn main() !void {
     const allocator = gpa.allocator();
 
     var list = std.ArrayList([]const u8).init(allocator);
+    defer list.deinit();
 
     try list.append("Notey"); // foo bar are overrated, I wanna use Notey (yep) instead
     try list.append("(yep)");
@@ -33,7 +34,22 @@ pub fn main() !void {
     }
     try bw.flush();
 
-    list.deinit();
+    // I wanna use the arenaAllocator for a list, let see how to make one:
+    const page = std.heap.page_allocator;
+    var arena = std.heap.ArenaAllocator.init(page);
+
+    // Now, let me build another ArrayList again, but with arena allocator
+    // Now I know why I got an error on using the arena allocator. It turns out
+    // ArenaAllocator and Allocator are two different things, which is different
+    // from java which they can be the same class of things due to inheritance.
+    var list2 = std.ArrayList([]const u8).init(arena.allocator());
+    defer list2.deinit();
+
+    try list2.append("Accipiter");
+    try list2.append("Nova");
+
+    try stdout.print("{s}\n", .{list2.items[0]});
+    try bw.flush();
 }
 
 test "simple test" {
