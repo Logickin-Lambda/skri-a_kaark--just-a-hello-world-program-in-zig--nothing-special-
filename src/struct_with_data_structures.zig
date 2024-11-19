@@ -14,7 +14,7 @@ pub fn experimenting_structs_with_ds(bw: anytype, stdout: anytype) !void {
     try bw.flush();
 
     // declare a struct:
-    const generator = SunVoxModule{
+    var generator = SunVoxModule{
         .module_name = ModuleType.generator,
         .module_class = ModuleClass.synth,
         .no_controllers = 16,
@@ -84,6 +84,8 @@ pub fn experimenting_structs_with_ds(bw: anytype, stdout: anytype) !void {
 
     // along with a map of struct
     var module_map = std.AutoHashMap(u32, ?SunVoxModule).init(arena.allocator());
+    defer module_map.deinit();
+
     try module_map.put(69, generator);
     try module_map.put(420, filter);
     try module_map.put(69420, metamodule);
@@ -104,6 +106,27 @@ pub fn experimenting_structs_with_ds(bw: anytype, stdout: anytype) !void {
             module.?.no_controllers,
         });
     }
+
+    try bw.flush();
+
+    // Bonus: I need to know if the all the declared structs are passed by reference or value,
+    // so I will try to modify the connection property of the generator module.
+    // If the changes applies to all data structure, it will be pass by refernce, otherwise value.
+    generator.no_controllers = 99;
+    struct_arr[0].?.no_controllers = 89;
+    module_list.items[0].?.no_controllers = 79;
+    // module_map.get(69).?.?.no_controllers = 69; // don't seem to find a way currently, but this is not the point
+
+    try stdout.print("\nthe controller number for {s} is the following:\n", .{@tagName(generator.module_name)});
+    try stdout.print("{d},{d},{d},{d}\n", .{
+        generator.no_controllers,
+        struct_arr[0].?.no_controllers,
+        module_list.items[0].?.no_controllers,
+        module_map.get(69).?.?.no_controllers,
+    });
+
+    try stdout.print("Since all values are updated independently, zig struct is pass by value\n", .{});
+    try stdout.print("This is similar to C, so I will do a experiment about the overhead on function calls\n", .{});
 
     try bw.flush();
 }
