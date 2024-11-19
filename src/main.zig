@@ -1,6 +1,7 @@
 const std = @import("std");
 const array_exp = @import("arraylist_experiment.zig");
 const hash_exp = @import("hashmap_experiment.zig");
+const struct_exp = @import("struct_with_data_structures.zig");
 
 pub fn main() !void {
     // stdout is for the actual output of your application, for example if you
@@ -19,6 +20,7 @@ pub fn main() !void {
     try bw.flush(); // don't forget to flush!
     try array_exp.experimenting_array_list(&bw, &stdout);
     try hash_exp.experimenting_hashmap(&bw, &stdout);
+    try struct_exp.experimenting_structs_with_ds(&bw, &stdout);
 }
 
 test "simple test" {
