@@ -36,11 +36,19 @@ pub fn experimenting_hashmap(bw: anytype, stdout: anytype) !void {
     const unknown_key = "Notey";
 
     if (map_str.get(unknown_key)) |unknown_value| {
-        try stdout.print("the value for {s}: {d:.2}", .{ unknown_key, unknown_value });
+        try stdout.print("the value for {s}: {d:.2}\n", .{ unknown_key, unknown_value });
     } else {
-        try stdout.print("Nah... Nothing for {s}", .{unknown_key});
+        try stdout.print("Nah... Nothing for {s}\n", .{unknown_key});
     }
 
+    try bw.flush();
+
+    // now, let me messing around the fetchPut() function to see how it works
+    // We're heading for Venus and still we stand tall
+    const earth_accel = try map_str.fetchPut("gravity", 8.87);
+
+    try stdout.print("The current gravity acceleration is: {d}\n", .{map_str.get("gravity").?});
+    try stdout.print("The earth gravity acceleration is: {d}\n", .{earth_accel.?.value});
     try bw.flush();
 }
 
