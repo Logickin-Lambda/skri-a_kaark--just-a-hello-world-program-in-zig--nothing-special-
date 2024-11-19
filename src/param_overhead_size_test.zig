@@ -1,11 +1,13 @@
 const std = @import("std");
 
 const TrackerTrackRow = struct {
-    // just like C, without predefine a value,
-    // the default value are all garbage data
-    pitch: ?u8 = 0,
-    velocity: ?u8 = 0,
-    module_id: ?u16 = 0,
+    // just like C, without predefine a value, the default value are all garbage data
+    // However, this design doesn't work even a constant is specificed becuase
+    // the create function from the allocator only provide the space without setting any variables
+    //
+    pitch: ?u8 = 0, // Doesn't work; after an allocation, we will still receive garbage
+    velocity: ?u8 = 0, // which is understanble because setting the value inside the allocator
+    module_id: ?u16 = 0, // does sounds like a a hidden behavior which zig discourages.
     fx: ?u16 = 0,
     param: ?u16 = 0,
     meta_data: ?u32 = 0,
@@ -13,8 +15,13 @@ const TrackerTrackRow = struct {
     // I am also thinking of testing a function that construct the struct, but
     // this will cause memory leak because there is no destructor,
     // but that will be another story for creating a proper con/destructor pattern
-    pub fn init(allocator: std.mem.Allocator) !*TrackerTrackRow {
-        return allocator.create(TrackerTrackRow);
+    fn init(allocator: std.mem.Allocator) !*TrackerTrackRow {
+        const row = try allocator.create(TrackerTrackRow);
+
+        // this is the only way to initialize the struct with default value on the heap
+        row.* = .{ .pitch = 69, .velocity = 0, .module_id = 0, .fx = 0, .param = 0, .meta_data = 0 };
+
+        return row;
     }
 };
 
@@ -27,9 +34,7 @@ pub fn function_input_payload_test(bw: anytype, stdout: anytype) !void {
     defer arena.deinit();
 
     const row1 = try TrackerTrackRow.init(arena.allocator());
-    row1.*.pitch = 0;
     try pass_by_value(bw, stdout, row1.*);
-
     try pass_by_refernce(bw, stdout, row1);
 }
 
