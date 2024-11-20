@@ -3,6 +3,7 @@ const array_exp = @import("arraylist_experiment.zig");
 const hash_exp = @import("hashmap_experiment.zig");
 const struct_exp = @import("struct_with_data_structures.zig");
 const paylaod_exp = @import("param_overhead_size_test.zig");
+const condest_exp = @import("constructor_pattern.zig");
 
 pub fn main() !void {
     // stdout is for the actual output of your application, for example if you
@@ -23,6 +24,7 @@ pub fn main() !void {
     try hash_exp.experimenting_hashmap(&bw, &stdout);
     try struct_exp.experimenting_structs_with_ds(&bw, &stdout);
     try paylaod_exp.function_input_payload_test(&bw, &stdout);
+    try condest_exp.test_con_destructor(&bw, &stdout);
 }
 
 test "simple test" {
