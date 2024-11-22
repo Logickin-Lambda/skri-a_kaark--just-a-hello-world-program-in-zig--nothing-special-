@@ -74,3 +74,12 @@ pub fn test_con_destructor(bw: anytype, stdout: anytype) !void {
     try stdout.print("\nthe top item is {d}", .{number_stack.peek()});
     try bw.flush();
 }
+
+// Seems I can use a unit test to test memory leak
+test "memory leak test" {
+    var numbers = try NumberStack().init(std.testing.allocator);
+    defer numbers.deinit(); // try commenting this out and see if zig detects the memory leak!
+    try numbers.push(48);
+
+    try std.testing.expectEqual(48, numbers.pop());
+}
