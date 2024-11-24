@@ -46,6 +46,51 @@ pub fn LinkedList(comptime T: type) type {
             self.size += 1;
         }
 
+        pub fn pop(self: *Self) T {
+            const item = self.tail.?.item;
+            const parent = self.search_parent(self.tail.?);
+            parent.?.node_ref = null;
+            self.allocator.destroy(self.tail.?);
+            self.size -= 1;
+
+            return item;
+        }
+
+        pub fn remove(self: *Self, item: T) !void {
+            // this is not well thought, but the purpose of this project
+            // is to be comfortable in zig, not writing a optimized linked list
+            // so I decided take a slower but cleaner approach:
+            const item_ptr = self.search_item_ptr(item);
+            if (item_ptr == null) return LinkedListError.ElementNotFound;
+
+            // empty pointer means the item is located at the head
+            const parent_ptr_opt = self.search_parent(item_ptr);
+
+            if (parent_ptr_opt) |*parent_ptr| {
+                const next_ptr_opt = item_ptr.?.*.node_ref;
+                self.allocator.destroy(item_ptr.?);
+
+                if (next_ptr_opt) |*next_ptr| {
+                    parent_ptr.*.node_ref = next_ptr;
+                } else {
+                    parent_ptr.*.node_ref = null;
+                    self.tail = parent_ptr;
+                }
+            } else {
+                const next_ptr_opt = item_ptr.?.node_ref;
+                self.allocator.destroy(self.head);
+
+                if (next_ptr_opt) |*next_prt| {
+                    self.head = next_prt;
+                } else {
+                    self.head = null;
+                    self.tail = null;
+                }
+            }
+
+            self.size -= 1;
+        }
+
         fn search_parent(self: *Self, target: *Node) ?*Node {
             var cur_node_ptr = self.head;
 
@@ -108,4 +153,7 @@ test "linked list test" {
 
     try std.testing.expectEqual(to_be_cleared_ptr, linked_list.search_parent(linked_list.tail.?));
     try std.testing.expectEqual(nice_ptr, linked_list.search_parent(to_be_cleared_ptr.?));
+
+    try std.testing.expectEqual(93, linked_list.pop());
+    try std.testing.expectEqual(4, linked_list.size);
 }
