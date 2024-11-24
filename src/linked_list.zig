@@ -9,12 +9,13 @@ const LinkedListError = error{
 
 pub fn LinkedList(comptime T: type) type {
     return struct {
+        // to build a dynamic sized data structure, we need to build a base with
+        // a pointer to the collections, and a struct storing the actual data
         const Self = @This();
         const Node = struct {
             item: T,
-            node_ref: ?*Node,
+            node_ref: ?*Node = null,
         };
-
         head: ?*Node = null,
         tail: ?*Node = null,
         size: usize = 0,
@@ -25,9 +26,19 @@ pub fn LinkedList(comptime T: type) type {
             // a default value has been assigned, which is 0.
             return .{ .allocator = allocator };
         }
-        // deinit will be tough because it requires to recursively
-        // remove all the linked elements
-        // pub fn deinit(self: *Self) void {}
+
+        pub fn deinit(self: *Self) void {
+            var cur_ptr_opt = self.head;
+
+            while (cur_ptr_opt) |cur_ptr| {
+                // I have to do that before destory the current node;
+                // otherwise, the reference will be lost
+                const next_node = cur_ptr.node_ref;
+                self.allocator.destroy(cur_ptr);
+
+                cur_ptr_opt = next_node;
+            }
+        }
 
         pub fn push(self: *Self, item: T) !void {
             const node = try self.allocator.create(Node);
@@ -51,6 +62,7 @@ pub fn LinkedList(comptime T: type) type {
             const parent = self.search_parent(self.tail.?);
             parent.?.node_ref = null;
             self.allocator.destroy(self.tail.?);
+            self.tail = parent;
             self.size -= 1;
 
             return item;
@@ -64,24 +76,24 @@ pub fn LinkedList(comptime T: type) type {
             if (item_ptr == null) return LinkedListError.ElementNotFound;
 
             // empty pointer means the item is located at the head
-            const parent_ptr_opt = self.search_parent(item_ptr);
+            const parent_ptr_opt = self.search_parent(item_ptr.?);
 
             if (parent_ptr_opt) |*parent_ptr| {
                 const next_ptr_opt = item_ptr.?.*.node_ref;
                 self.allocator.destroy(item_ptr.?);
 
-                if (next_ptr_opt) |*next_ptr| {
-                    parent_ptr.*.node_ref = next_ptr;
+                if (next_ptr_opt != null) {
+                    parent_ptr.*.node_ref = next_ptr_opt;
                 } else {
                     parent_ptr.*.node_ref = null;
-                    self.tail = parent_ptr;
+                    self.tail = parent_ptr_opt;
                 }
             } else {
                 const next_ptr_opt = item_ptr.?.node_ref;
-                self.allocator.destroy(self.head);
+                self.allocator.destroy(item_ptr.?);
 
-                if (next_ptr_opt) |*next_prt| {
-                    self.head = next_prt;
+                if (next_ptr_opt != null) {
+                    self.head = next_ptr_opt;
                 } else {
                     self.head = null;
                     self.tail = null;
@@ -125,8 +137,11 @@ pub fn LinkedList(comptime T: type) type {
     };
 }
 
+// Please don't follow writing unit test in this way since I should test each operation separately,
+// but I got a bit lazy with it.
 test "linked list test" {
     var linked_list = LinkedList(i64).init(std.testing.allocator);
+    defer linked_list.deinit();
 
     try linked_list.push(45);
     std.debug.print("\nThe first item is {d}\n", .{linked_list.head.?.item});
@@ -156,4 +171,32 @@ test "linked list test" {
 
     try std.testing.expectEqual(93, linked_list.pop());
     try std.testing.expectEqual(4, linked_list.size);
+
+    try linked_list.remove(57);
+    std.debug.print("\nThe first item is {d}\n", .{linked_list.head.?.item});
+    std.debug.print("The next item is {d}\n", .{linked_list.head.?.node_ref.?.item});
+    try std.testing.expectEqual(45, linked_list.head.?.item);
+    try std.testing.expectEqual(69, linked_list.head.?.node_ref.?.item);
+    try std.testing.expectEqual(3, linked_list.size);
+
+    try linked_list.push(105);
+    try linked_list.push(117);
+    try linked_list.push(129);
+
+    // removing the head and tail elements:
+    try linked_list.remove(45);
+    try linked_list.remove(129);
+
+    try std.testing.expectEqual(4, linked_list.size);
+    const expected_answer1 = [4]i64{ 69, 81, 105, 117 };
+
+    var cur_ptr = linked_list.head;
+    var i: usize = 0;
+    while (cur_ptr) |ptr| {
+        const next = ptr.node_ref;
+        try std.testing.expectEqual(expected_answer1[i], ptr.*.item);
+
+        cur_ptr = next;
+        i += 1;
+    }
 }
