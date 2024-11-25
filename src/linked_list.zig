@@ -21,6 +21,8 @@ pub fn LinkedList(comptime T: type) type {
         size: usize = 0,
         allocator: std.mem.Allocator,
 
+        // this is like a constructor, returning an instance of LinkedList
+        // so that I can call all the operations that manipulate the linked list.
         pub fn init(allocator: std.mem.Allocator) Self {
             // we don't need to care about the value of size because
             // a default value has been assigned, which is 0.
