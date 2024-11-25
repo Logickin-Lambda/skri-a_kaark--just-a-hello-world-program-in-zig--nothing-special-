@@ -59,6 +59,24 @@ pub fn LinkedList(comptime T: type) type {
             self.size += 1;
         }
 
+        pub fn insert_after(self: *Self, item: T, after: T) !void {
+            const target = self.search_item_ptr(after);
+
+            if (target == null) return LinkedListError.ElementNotFound;
+            const next_opt = target.?.*.node_ref;
+            const new = try self.allocator.create(Node);
+            new.item = item;
+
+            if (next_opt != null) {
+                target.?.*.node_ref = new;
+                new.node_ref = next_opt;
+            } else {
+                target.?.*.node_ref = new;
+            }
+
+            self.size += 1;
+        }
+
         pub fn pop(self: *Self) T {
             const item = self.tail.?.item;
             const parent = self.search_parent(self.tail.?);
@@ -188,6 +206,7 @@ test "linked list test" {
     // removing the head and tail elements:
     try linked_list.remove(45);
     try linked_list.remove(129);
+    try std.testing.expectError(LinkedListError.ElementNotFound, linked_list.remove(999));
 
     try std.testing.expectEqual(4, linked_list.size);
     const expected_answer1 = [4]i64{ 69, 81, 105, 117 };
@@ -197,6 +216,21 @@ test "linked list test" {
     while (cur_ptr) |ptr| {
         const next = ptr.node_ref;
         try std.testing.expectEqual(expected_answer1[i], ptr.*.item);
+
+        cur_ptr = next;
+        i += 1;
+    }
+
+    try linked_list.insert_after(88, 105);
+
+    try std.testing.expectEqual(5, linked_list.size);
+    const expected_answer2 = [5]i64{ 69, 81, 105, 88, 117 };
+
+    cur_ptr = linked_list.head;
+    i = 0;
+    while (cur_ptr) |ptr| {
+        const next = ptr.node_ref;
+        try std.testing.expectEqual(expected_answer2[i], ptr.*.item);
 
         cur_ptr = next;
         i += 1;
