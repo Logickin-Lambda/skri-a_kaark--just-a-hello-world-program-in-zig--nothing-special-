@@ -17,7 +17,7 @@ pub fn main() !void {
     // Freedom Mech! (G'day Mate!)
     try stdout.print("<!--Skri-A Kaark-->\n", .{});
     // Mech Hawk "Nova" I am. (I am Accipiter Nova)
-    try stdout.print("/// Kaark.Skryka.Now-Va Zor Se\n", .{});
+    try stdout.print("/// Zor Kaark.Skryka.Now-Va Se\n", .{});
 
     try bw.flush(); // don't forget to flush!
     try array_exp.experimenting_array_list(&bw, &stdout);

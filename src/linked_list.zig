@@ -235,4 +235,6 @@ test "linked list test" {
         cur_ptr = next;
         i += 1;
     }
+
+    try std.testing.expectError(LinkedListError.ElementNotFound, linked_list.insert_after(100, 999));
 }
